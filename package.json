@@ -15,7 +15,8 @@
     "cross-env": "^5.0.1",
     "express": "^4.15.3",
     "helmet": "^3.6.1",
-    "mongoose": "^4.10.7"
+    "mongoose": "^4.10.7",
+    "validator": "^7.0.0"
   },
   "devDependencies": {
     "babel-core": "^6.25.0",
