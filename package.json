@@ -1,0 +1,8 @@
+{
+  "name": "RestfulAPI",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/abel30567/RestfulAPI.git",
+  "author": "Claudio Atilano",
+  "license": "MIT"
+}
