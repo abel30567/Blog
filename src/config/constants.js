@@ -1,5 +1,6 @@
 const devConfig = {
   MONGO_URL: 'mongodb://localhost/nodejsrestapi-dev',
+  JWT_SECRET: 'imarkettech',
 };
 
 const testConfig = {

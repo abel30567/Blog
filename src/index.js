@@ -7,6 +7,8 @@ import './config/database';
 
 import middlewaresConfig from './config/middleware';
 
+import apiRoutes from './modules';
+
 const app = express();
 
 middlewaresConfig(app);
@@ -16,6 +18,9 @@ middlewaresConfig(app);
 app.get('/', (req, res) => {
   res.send('Hello  World');
 });
+
+// Setting up the API
+apiRoutes(app);
 
 // Port set up
 app.listen(constants.PORT, err => {
