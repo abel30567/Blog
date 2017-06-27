@@ -1,8 +1,8 @@
-
 import mongoose, { Schema } from 'mongoose';
-import validator from 'validator';
-import { hashSync, compareSync } from 'bcrypt-nodejs';
-import jwt from 'jsonwebtoken';
+import validator from 'validator'; // Validates our password with required params
+import { hashSync, compareSync } from 'bcrypt-nodejs'; // Hash our password & compare typed password to hash
+import jwt from 'jsonwebtoken'; // Gives the front end a JSON web token
+import uniqueValidator from 'mongoose-unique-validator'; // Validates the uniqueness of schema attribute
 
 import { passwordReg } from './user.validation';
 import constants from '../../config/constants';
@@ -48,7 +48,15 @@ const UserSchema = new Schema({
       message: '{VALUE} is not a valid password!',
     },
   },
+}, { timestamps: true });
+
+// Plugin
+
+UserSchema.plugin(uniqueValidator, {
+  message: '{VALUE} already taken!',
 });
+
+// Running scripts
 // Before saving the password to the database we want to encrypt the password for security reasons
 UserSchema.pre('save', function (next) {
   // we want the user to be able to change his password so the line below allows the new password to be hashed
@@ -59,6 +67,7 @@ UserSchema.pre('save', function (next) {
   }
 });
 
+// Methods
 // password is the password user types
 
 UserSchema.methods = {
@@ -78,11 +87,17 @@ UserSchema.methods = {
       constants.JWT_SECRET,
     );
   },
-  toJSON() {
+  toAuthJSON() {
     return {
       _id: this._id,
       userName: this.userName,
       token: `JWT ${this.createToken()}`,
+    };
+  },
+  toJSON() {
+    return {
+      _id: this._id,
+      userName: this.userName,
     };
   },
 };
