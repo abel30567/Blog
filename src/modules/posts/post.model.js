@@ -75,6 +75,15 @@ PostSchema.statics = {
       user,
     });
   },
+  // The list function list() sorts out our data to be from most recent post,
+  // doesn't skip a post, limits posts shown to 5, it shows which user created that post.
+  list({ skip = 0, limit = 5 } = {}) {
+    return this.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('user');
+  },
 };
 
 export default mongoose.model('Post', PostSchema);
