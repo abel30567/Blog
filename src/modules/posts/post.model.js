@@ -1,52 +1,48 @@
 import mongoose, { Schema } from 'mongoose';
-import slug from 'slug'; // this is for the title of page like xxx.com/title
-import uniqueValidator from 'mongoose-unique-validator'; // this library helps us validate uniqueness
+import slug from 'slug';
+import uniqueValidator from 'mongoose-unique-validator';
 
-const PostSchema = new Schema({
-  title: {
-    type: String,
-    trim: true,
-    required: [true, 'Title is required!'],
-    minlength: [3, 'Title needs to be longer.'],
-    unique: true,
+const PostSchema = new Schema(
+  {
+    title: {
+      type: String,
+      trim: true,
+      required: [true, 'Title is required!'],
+      minlength: [3, 'Title need to be longer!'],
+      unique: true,
+    },
+    text: {
+      type: String,
+      trim: true,
+      required: [true, 'Text is required!'],
+      minlength: [10, 'Text need to be longer!'],
+    },
+    slug: {
+      type: String,
+      trim: true,
+      lowercase: true,
+    },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    favoriteCount: {
+      type: Number,
+      default: 0,
+    },
   },
-  body: {
-    type: String,
-    trim: true,
-    required: [true, 'Body must be provided'],
-    minlength: [20, 'Body needs to be longer'],
-  },
-  slug: {
-    type: String,
-    trim: true,
-    lowercase: true,
-  },
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-  },
-  favoriteCount: {
-    type: Number,
-    default: 0,
-  },
-
-}, { timestamps: true });
-
-// Plugin
+  { timestamps: true },
+);
 
 PostSchema.plugin(uniqueValidator, {
   message: '{VALUE} already taken!',
 });
-
-// Running scripts
 
 PostSchema.pre('validate', function (next) {
   this._slugify();
 
   next();
 });
-
-// Methods
 
 PostSchema.methods = {
   _slugify() {
@@ -55,18 +51,15 @@ PostSchema.methods = {
   toJSON() {
     return {
       _id: this._id,
+      title: this.title,
+      text: this.text,
       createdAt: this.createdAt,
       slug: this.slug,
-      title: this.title,
-      body: this.body,
       user: this.user,
       favoriteCount: this.favoriteCount,
     };
   },
 };
-
-// Statics
-// Method 2 of creating a post. create a function for it here
 
 PostSchema.statics = {
   createPost(args, user) {
@@ -75,14 +68,20 @@ PostSchema.statics = {
       user,
     });
   },
-  // The list function list() sorts out our data to be from most recent post,
-  // doesn't skip a post, limits posts shown to 5, it shows which user created that post.
   list({ skip = 0, limit = 5 } = {}) {
     return this.find()
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate('user');
+  },
+
+  incFavoriteCount(postId) {
+    return this.findByIdAndUpdate(postId, { $inc: { favoriteCount: 1 } });
+  },
+
+  decFavoriteCount(postId) {
+    return this.findByIdAndUpdate(postId, { $inc: { favoriteCount: -1 } });
   },
 };
 

@@ -61,7 +61,7 @@ module.exports =
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 11);
+/******/ 	return __webpack_require__(__webpack_require__.s = 12);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -118,24 +118,6 @@ module.exports = require("mongoose");
 
 /***/ }),
 /* 3 */
-/***/ (function(module, exports) {
-
-module.exports = require("passport");
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports) {
-
-module.exports = require("express-validation");
-
-/***/ }),
-/* 5 */
-/***/ (function(module, exports) {
-
-module.exports = require("http-status");
-
-/***/ }),
-/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -149,13 +131,13 @@ var _mongoose = __webpack_require__(2);
 
 var _mongoose2 = _interopRequireDefault(_mongoose);
 
-var _validator = __webpack_require__(21);
+var _validator = __webpack_require__(22);
 
 var _validator2 = _interopRequireDefault(_validator);
 
-var _bcryptNodejs = __webpack_require__(22);
+var _bcryptNodejs = __webpack_require__(23);
 
-var _jsonwebtoken = __webpack_require__(23);
+var _jsonwebtoken = __webpack_require__(24);
 
 var _jsonwebtoken2 = _interopRequireDefault(_jsonwebtoken);
 
@@ -163,7 +145,11 @@ var _mongooseUniqueValidator = __webpack_require__(7);
 
 var _mongooseUniqueValidator2 = _interopRequireDefault(_mongooseUniqueValidator);
 
-var _user = __webpack_require__(8);
+var _post = __webpack_require__(8);
+
+var _post2 = _interopRequireDefault(_post);
+
+var _user = __webpack_require__(9);
 
 var _constants = __webpack_require__(0);
 
@@ -171,9 +157,8 @@ var _constants2 = _interopRequireDefault(_constants);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// Validates the uniqueness of schema attribute
+function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
-// Hash our password & compare typed password to hash
 const UserSchema = new _mongoose.Schema({
   email: {
     type: String,
@@ -214,30 +199,32 @@ const UserSchema = new _mongoose.Schema({
       },
       message: '{VALUE} is not a valid password!'
     }
+  },
+  favorites: {
+    posts: [{
+      type: _mongoose.Schema.Types.ObjectId,
+      ref: 'Post'
+    }]
+  },
+  shared: {
+    posts: [{
+      type: _mongoose.Schema.Types.ObjectId,
+      ref: 'Post'
+    }]
   }
 }, { timestamps: true });
 
-// Plugin
-
-// Gives the front end a JSON web token
-// Validates our password with required params
 UserSchema.plugin(_mongooseUniqueValidator2.default, {
   message: '{VALUE} already taken!'
 });
 
-// Running scripts
-// Before saving the password to the database we want to encrypt the password for security reasons
 UserSchema.pre('save', function (next) {
-  // we want the user to be able to change his password so the line below allows the new password to be hashed
   if (this.isModified('password')) {
     this.password = this._hashPassword(this.password);
-    // new password going to be new password encrypted
-    return next();
   }
-});
 
-// Methods
-// password is the password user types
+  return next();
+});
 
 UserSchema.methods = {
   _hashPassword(password) {
@@ -245,8 +232,6 @@ UserSchema.methods = {
   },
   authenticateUser(password) {
     return (0, _bcryptNodejs.compareSync)(password, this.password);
-    // hashSync(password) === this.password,
-    // password comes from the front end and this.password is the object's stored password
   },
   createToken() {
     return _jsonwebtoken2.default.sign({
@@ -265,10 +250,68 @@ UserSchema.methods = {
       _id: this._id,
       userName: this.userName
     };
+  },
+
+  _favorites: {
+    posts(postId) {
+      var _this = this;
+
+      return _asyncToGenerator(function* () {
+        if (_this.favorites.posts.indexOf(postId) >= 0) {
+          _this.favorites.posts.remove(postId);
+          yield _post2.default.decFavoriteCount(postId);
+        } else {
+          _this.favorites.posts.push(postId);
+          yield _post2.default.incFavoriteCount(postId);
+        }
+
+        return _this.save();
+      })();
+    },
+
+    isPostFavorited(postId) {
+      if (this.favorites.posts.indexOf(postId) >= 0) {
+        return true;
+      }
+      return false;
+    }
+  },
+  _shared: {
+    posts(postId) {
+      var _this2 = this;
+
+      return _asyncToGenerator(function* () {
+        if (_this2.shared.posts.indexOf(postId) >= 0) {
+          _this2.shared.posts.remove(postId);
+          // decrease count function
+        } else {
+          _this2.shared.posts.push(postId);
+          // increase count function
+        }
+      })();
+    }
   }
 };
 
 exports.default = _mongoose2.default.model('User', UserSchema);
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports) {
+
+module.exports = require("passport");
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports) {
+
+module.exports = require("express-validation");
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports) {
+
+module.exports = require("http-status");
 
 /***/ }),
 /* 7 */
@@ -286,9 +329,111 @@ module.exports = require("mongoose-unique-validator");
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _mongoose = __webpack_require__(2);
+
+var _mongoose2 = _interopRequireDefault(_mongoose);
+
+var _slug = __webpack_require__(25);
+
+var _slug2 = _interopRequireDefault(_slug);
+
+var _mongooseUniqueValidator = __webpack_require__(7);
+
+var _mongooseUniqueValidator2 = _interopRequireDefault(_mongooseUniqueValidator);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const PostSchema = new _mongoose.Schema({
+  title: {
+    type: String,
+    trim: true,
+    required: [true, 'Title is required!'],
+    minlength: [3, 'Title need to be longer!'],
+    unique: true
+  },
+  text: {
+    type: String,
+    trim: true,
+    required: [true, 'Text is required!'],
+    minlength: [10, 'Text need to be longer!']
+  },
+  slug: {
+    type: String,
+    trim: true,
+    lowercase: true
+  },
+  user: {
+    type: _mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  favoriteCount: {
+    type: Number,
+    default: 0
+  }
+}, { timestamps: true });
+
+PostSchema.plugin(_mongooseUniqueValidator2.default, {
+  message: '{VALUE} already taken!'
+});
+
+PostSchema.pre('validate', function (next) {
+  this._slugify();
+
+  next();
+});
+
+PostSchema.methods = {
+  _slugify() {
+    this.slug = (0, _slug2.default)(this.title);
+  },
+  toJSON() {
+    return {
+      _id: this._id,
+      title: this.title,
+      text: this.text,
+      createdAt: this.createdAt,
+      slug: this.slug,
+      user: this.user,
+      favoriteCount: this.favoriteCount
+    };
+  }
+};
+
+PostSchema.statics = {
+  createPost(args, user) {
+    return this.create(Object.assign({}, args, {
+      user
+    }));
+  },
+  list({ skip = 0, limit = 5 } = {}) {
+    return this.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate('user');
+  },
+
+  incFavoriteCount(postId) {
+    return this.findByIdAndUpdate(postId, { $inc: { favoriteCount: 1 } });
+  },
+
+  decFavoriteCount(postId) {
+    return this.findByIdAndUpdate(postId, { $inc: { favoriteCount: -1 } });
+  }
+};
+
+exports.default = _mongoose2.default.model('Post', PostSchema);
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 exports.passwordReg = undefined;
 
-var _joi = __webpack_require__(9);
+var _joi = __webpack_require__(10);
 
 var _joi2 = _interopRequireDefault(_joi);
 
@@ -309,13 +454,13 @@ exports.default = {
 };
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports) {
 
 module.exports = require("joi");
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -326,17 +471,17 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.authJwt = exports.authLocal = undefined;
 
-var _passport = __webpack_require__(3);
+var _passport = __webpack_require__(4);
 
 var _passport2 = _interopRequireDefault(_passport);
 
-var _passportLocal = __webpack_require__(24);
+var _passportLocal = __webpack_require__(26);
 
 var _passportLocal2 = _interopRequireDefault(_passportLocal);
 
-var _passportJwt = __webpack_require__(25);
+var _passportJwt = __webpack_require__(27);
 
-var _user = __webpack_require__(6);
+var _user = __webpack_require__(3);
 
 var _user2 = _interopRequireDefault(_user);
 
@@ -417,7 +562,7 @@ const authLocal = exports.authLocal = _passport2.default.authenticate('local', {
 const authJwt = exports.authJwt = _passport2.default.authenticate('jwt', { session: false });
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -431,13 +576,13 @@ var _constants = __webpack_require__(0);
 
 var _constants2 = _interopRequireDefault(_constants);
 
-__webpack_require__(12);
+__webpack_require__(13);
 
-var _middleware = __webpack_require__(13);
+var _middleware = __webpack_require__(14);
 
 var _middleware2 = _interopRequireDefault(_middleware);
 
-var _modules = __webpack_require__(18);
+var _modules = __webpack_require__(19);
 
 var _modules2 = _interopRequireDefault(_modules);
 
@@ -472,7 +617,7 @@ app.listen(_constants2.default.PORT, err => {
 });
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -505,7 +650,7 @@ _mongoose2.default.connection.once('open', () => console.log('MongoDB Running'))
 });
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -515,23 +660,23 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _morgan = __webpack_require__(14);
+var _morgan = __webpack_require__(15);
 
 var _morgan2 = _interopRequireDefault(_morgan);
 
-var _bodyParser = __webpack_require__(15);
+var _bodyParser = __webpack_require__(16);
 
 var _bodyParser2 = _interopRequireDefault(_bodyParser);
 
-var _compression = __webpack_require__(16);
+var _compression = __webpack_require__(17);
 
 var _compression2 = _interopRequireDefault(_compression);
 
-var _helmet = __webpack_require__(17);
+var _helmet = __webpack_require__(18);
 
 var _helmet2 = _interopRequireDefault(_helmet);
 
-var _passport = __webpack_require__(3);
+var _passport = __webpack_require__(4);
 
 var _passport2 = _interopRequireDefault(_passport);
 
@@ -554,31 +699,31 @@ exports.default = app => {
 };
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports) {
 
 module.exports = require("morgan");
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, exports) {
 
 module.exports = require("body-parser");
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports) {
 
 module.exports = require("compression");
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports) {
 
 module.exports = require("helmet");
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -588,11 +733,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _user = __webpack_require__(19);
+var _user = __webpack_require__(20);
 
 var _user2 = _interopRequireDefault(_user);
 
-var _post = __webpack_require__(26);
+var _post = __webpack_require__(28);
 
 var _post2 = _interopRequireDefault(_post);
 
@@ -609,7 +754,7 @@ exports.default = app => {
 // import { authJwt } from '../services/auth.services'; // This is  to test our JWT
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -621,19 +766,19 @@ Object.defineProperty(exports, "__esModule", {
 
 var _express = __webpack_require__(1);
 
-var _expressValidation = __webpack_require__(4);
+var _expressValidation = __webpack_require__(5);
 
 var _expressValidation2 = _interopRequireDefault(_expressValidation);
 
-var _user = __webpack_require__(20);
+var _user = __webpack_require__(21);
 
 var userController = _interopRequireWildcard(_user);
 
-var _user2 = __webpack_require__(8);
+var _user2 = __webpack_require__(9);
 
 var _user3 = _interopRequireDefault(_user2);
 
-var _auth = __webpack_require__(10);
+var _auth = __webpack_require__(11);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -647,7 +792,7 @@ routes.post('/login', _auth.authLocal, userController.login);
 exports.default = routes;
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -675,11 +820,11 @@ let signUp = exports.signUp = (() => {
 
 exports.login = login;
 
-var _httpStatus = __webpack_require__(5);
+var _httpStatus = __webpack_require__(6);
 
 var _httpStatus2 = _interopRequireDefault(_httpStatus);
 
-var _user = __webpack_require__(6);
+var _user = __webpack_require__(3);
 
 var _user2 = _interopRequireDefault(_user);
 
@@ -695,37 +840,43 @@ function login(req, res, next) {
 }
 
 /***/ }),
-/* 21 */
+/* 22 */
 /***/ (function(module, exports) {
 
 module.exports = require("validator");
 
 /***/ }),
-/* 22 */
+/* 23 */
 /***/ (function(module, exports) {
 
 module.exports = require("bcrypt-nodejs");
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports) {
 
 module.exports = require("jsonwebtoken");
 
 /***/ }),
-/* 24 */
+/* 25 */
+/***/ (function(module, exports) {
+
+module.exports = require("slug");
+
+/***/ }),
+/* 26 */
 /***/ (function(module, exports) {
 
 module.exports = require("passport-local");
 
 /***/ }),
-/* 25 */
+/* 27 */
 /***/ (function(module, exports) {
 
 module.exports = require("passport-jwt");
 
 /***/ }),
-/* 26 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -737,15 +888,15 @@ Object.defineProperty(exports, "__esModule", {
 
 var _express = __webpack_require__(1);
 
-var _expressValidation = __webpack_require__(4);
+var _expressValidation = __webpack_require__(5);
 
 var _expressValidation2 = _interopRequireDefault(_expressValidation);
 
-var _post = __webpack_require__(27);
+var _post = __webpack_require__(29);
 
 var postController = _interopRequireWildcard(_post);
 
-var _auth = __webpack_require__(10);
+var _auth = __webpack_require__(11);
 
 var _post2 = __webpack_require__(30);
 
@@ -758,14 +909,18 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const routes = new _express.Router();
 
 routes.post('/', _auth.authJwt, (0, _expressValidation2.default)(_post3.default.createPost), postController.createPost);
-routes.get('/:id', postController.getPostById);
-routes.get('/', postController.getPostList);
+routes.get('/:id', _auth.authJwt, postController.getPostById);
+routes.get('/', _auth.authJwt, postController.getPostsList);
 routes.patch('/:id', _auth.authJwt, (0, _expressValidation2.default)(_post3.default.updatePost), postController.updatePost);
+routes.delete('/:id', _auth.authJwt, postController.deletePost);
+
+// Favorites
+routes.post('/:id/favorite', _auth.authJwt, postController.favoritePost);
 
 exports.default = routes;
 
 /***/ }),
-/* 27 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -774,17 +929,12 @@ exports.default = routes;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.updatePost = exports.getPostList = exports.getPostById = exports.createPost = undefined;
+exports.favoritePost = exports.deletePost = exports.updatePost = exports.getPostsList = exports.getPostById = exports.createPost = undefined;
 
 let createPost = exports.createPost = (() => {
   var _ref = _asyncToGenerator(function* (req, res) {
     try {
       const post = yield _post2.default.createPost(req.body, req.user._id);
-      // Method 1 of creating a post.
-      // const post = await Post.create({ ...req.body, user: req.user._id });
-      // The ...req.body states to create a post with everything the request brings with
-      // And we can use req.user._id because of JWT
-      // see post.model for method 2
       return res.status(_httpStatus2.default.CREATED).json(post);
     } catch (e) {
       return res.status(_httpStatus2.default.BAD_REQUEST).json(e);
@@ -799,8 +949,14 @@ let createPost = exports.createPost = (() => {
 let getPostById = exports.getPostById = (() => {
   var _ref2 = _asyncToGenerator(function* (req, res) {
     try {
-      const post = yield _post2.default.findById(req.params.id).populate('user');
-      return res.status(_httpStatus2.default.OK).json(post);
+      const promise = yield Promise.all([_user2.default.findById(req.user._id), _post2.default.findById(req.params.id).populate('user')]);
+
+      const favorite = promise[0]._favorites.isPostFavorited(req.params.id);
+      const post = promise[1];
+
+      return res.status(_httpStatus2.default.OK).json(Object.assign({}, post.toJSON(), {
+        favorite
+      }));
     } catch (e) {
       return res.status(_httpStatus2.default.BAD_REQUEST).json(e);
     }
@@ -810,20 +966,31 @@ let getPostById = exports.getPostById = (() => {
     return _ref2.apply(this, arguments);
   };
 })();
-// See the list() function in model
 
-
-let getPostList = exports.getPostList = (() => {
+let getPostsList = exports.getPostsList = (() => {
   var _ref3 = _asyncToGenerator(function* (req, res) {
+    const limit = parseInt(req.query.limit, 0);
+    const skip = parseInt(req.query.skip, 0);
     try {
-      const posts = yield _post2.default.list({ limit: Number(req.query.limit), skip: Number(req.query.skip) });
+      const promise = yield Promise.all([_user2.default.findById(req.user._id), _post2.default.list({ limit, skip })]);
+
+      const posts = promise[1].reduce(function (arr, post) {
+        const favorite = promise[0]._favorites.isPostFavorited(post._id);
+
+        arr.push(Object.assign({}, post.toJSON(), {
+          favorite
+        }));
+
+        return arr;
+      }, []);
+
       return res.status(_httpStatus2.default.OK).json(posts);
     } catch (e) {
       return res.status(_httpStatus2.default.BAD_REQUEST).json(e);
     }
   });
 
-  return function getPostList(_x5, _x6) {
+  return function getPostsList(_x5, _x6) {
     return _ref3.apply(this, arguments);
   };
 })();
@@ -831,13 +998,12 @@ let getPostList = exports.getPostList = (() => {
 let updatePost = exports.updatePost = (() => {
   var _ref4 = _asyncToGenerator(function* (req, res) {
     try {
-      const post = yield _post2.default.findById(req.params.id); // the /:id route
+      const post = yield _post2.default.findById(req.params.id);
 
       if (!post.user.equals(req.user._id)) {
         return res.sendStatus(_httpStatus2.default.UNAUTHORIZED);
       }
-      // Object.keys gets the key values of an object like title & body
-      // Object.values gets the values for the keys like title 1 & content of body
+
       Object.keys(req.body).forEach(function (key) {
         post[key] = req.body[key];
       });
@@ -853,132 +1019,58 @@ let updatePost = exports.updatePost = (() => {
   };
 })();
 
-var _httpStatus = __webpack_require__(5);
+let deletePost = exports.deletePost = (() => {
+  var _ref5 = _asyncToGenerator(function* (req, res) {
+    try {
+      const post = yield _post2.default.findById(req.params.id);
+
+      if (!post.user.equals(req.user._id)) {
+        return res.sendStatus(_httpStatus2.default.UNAUTHORIZED);
+      }
+
+      yield post.remove();
+      return res.sendStatus(_httpStatus2.default.OK);
+    } catch (e) {
+      return res.status(_httpStatus2.default.BAD_REQUEST).json(e);
+    }
+  });
+
+  return function deletePost(_x9, _x10) {
+    return _ref5.apply(this, arguments);
+  };
+})();
+
+let favoritePost = exports.favoritePost = (() => {
+  var _ref6 = _asyncToGenerator(function* (req, res) {
+    try {
+      const user = yield _user2.default.findById(req.user._id);
+      yield user._favorites.posts(req.params.id);
+      return res.sendStatus(_httpStatus2.default.OK);
+    } catch (e) {
+      return res.status(_httpStatus2.default.BAD_REQUEST).json(e);
+    }
+  });
+
+  return function favoritePost(_x11, _x12) {
+    return _ref6.apply(this, arguments);
+  };
+})();
+
+var _httpStatus = __webpack_require__(6);
 
 var _httpStatus2 = _interopRequireDefault(_httpStatus);
 
-var _post = __webpack_require__(28);
+var _post = __webpack_require__(8);
 
 var _post2 = _interopRequireDefault(_post);
+
+var _user = __webpack_require__(3);
+
+var _user2 = _interopRequireDefault(_user);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-
-/***/ }),
-/* 28 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _mongoose = __webpack_require__(2);
-
-var _mongoose2 = _interopRequireDefault(_mongoose);
-
-var _slug = __webpack_require__(29);
-
-var _slug2 = _interopRequireDefault(_slug);
-
-var _mongooseUniqueValidator = __webpack_require__(7);
-
-var _mongooseUniqueValidator2 = _interopRequireDefault(_mongooseUniqueValidator);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// this library helps us validate uniqueness
-
-const PostSchema = new _mongoose.Schema({
-  title: {
-    type: String,
-    trim: true,
-    required: [true, 'Title is required!'],
-    minlength: [3, 'Title needs to be longer.'],
-    unique: true
-  },
-  body: {
-    type: String,
-    trim: true,
-    required: [true, 'Body must be provided'],
-    minlength: [20, 'Body needs to be longer']
-  },
-  slug: {
-    type: String,
-    trim: true,
-    lowercase: true
-  },
-  user: {
-    type: _mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  favoriteCount: {
-    type: Number,
-    default: 0
-  }
-
-}, { timestamps: true });
-
-// Plugin
-
-// this is for the title of page like xxx.com/title
-PostSchema.plugin(_mongooseUniqueValidator2.default, {
-  message: '{VALUE} already taken!'
-});
-
-// Running scripts
-
-PostSchema.pre('validate', function (next) {
-  this._slugify();
-
-  next();
-});
-
-// Methods
-
-PostSchema.methods = {
-  _slugify() {
-    this.slug = (0, _slug2.default)(this.title);
-  },
-  toJSON() {
-    return {
-      _id: this._id,
-      createdAt: this.createdAt,
-      slug: this.slug,
-      title: this.title,
-      body: this.body,
-      user: this.user,
-      favoriteCount: this.favoriteCount
-    };
-  }
-};
-
-// Statics
-// Method 2 of creating a post. create a function for it here
-
-PostSchema.statics = {
-  createPost(args, user) {
-    return this.create(Object.assign({}, args, {
-      user
-    }));
-  },
-  // The list function list() sorts out our data to be from most recent post,
-  // doesn't skip a post, limits posts shown to 5, it shows which user created that post.
-  list({ skip = 0, limit = 5 } = {}) {
-    return this.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate('user');
-  }
-};
-
-exports.default = _mongoose2.default.model('Post', PostSchema);
-
-/***/ }),
-/* 29 */
-/***/ (function(module, exports) {
-
-module.exports = require("slug");
 
 /***/ }),
 /* 30 */
@@ -991,7 +1083,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _joi = __webpack_require__(9);
+var _joi = __webpack_require__(10);
 
 var _joi2 = _interopRequireDefault(_joi);
 
