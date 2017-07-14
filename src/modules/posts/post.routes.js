@@ -27,4 +27,7 @@ routes.delete('/:id', authJwt, postController.deletePost);
 // Favorites
 routes.post('/:id/favorite', authJwt, postController.favoritePost);
 
+// Shared
+routes.post('/:id/share', authJwt, postController.sharePost);
+
 export default routes;

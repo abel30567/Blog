@@ -131,11 +131,20 @@ UserSchema.methods = {
     async posts(postId) {
       if (this.shared.posts.indexOf(postId) >= 0) {
         this.shared.posts.remove(postId);
-        // decrease count function
+        await Post.decShareCount(postId);
       } else {
         this.shared.posts.push(postId);
-        // increase count function
+        await Post.incShareCount(postId);
       }
+
+      return this.save();
+    },
+
+    isPostShared(postId) {
+      if (this.shared.posts.indexOf(postId) >= 0) {
+        return true;
+      }
+      return false;
     },
   },
 };

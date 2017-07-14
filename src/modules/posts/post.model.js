@@ -30,6 +30,10 @@ const PostSchema = new Schema(
       type: Number,
       default: 0,
     },
+    shareCount: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true },
 );
@@ -57,6 +61,7 @@ PostSchema.methods = {
       slug: this.slug,
       user: this.user,
       favoriteCount: this.favoriteCount,
+      shareCount: this.shareCount,
     };
   },
 };
@@ -82,6 +87,12 @@ PostSchema.statics = {
 
   decFavoriteCount(postId) {
     return this.findByIdAndUpdate(postId, { $inc: { favoriteCount: -1 } });
+  },
+  incShareCount(postId) {
+    return this.findByIdAndUpdate(postId, { $inc: { shareCount: 1 } });
+  },
+  decShareCount(postId) {
+    return this.findByIdAndUpdate(postId, { $inc: { shareCount: -1 } });
   },
 };
 

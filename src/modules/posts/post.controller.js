@@ -20,11 +20,13 @@ export async function getPostById(req, res) {
     ]);
 
     const favorite = promise[0]._favorites.isPostFavorited(req.params.id);
+    const share = promise[0]._shared.isPostShared(req.params.id);
     const post = promise[1];
 
     return res.status(HTTPStatus.OK).json({
       ...post.toJSON(),
       favorite,
+      share,
     });
   } catch (e) {
     return res.status(HTTPStatus.BAD_REQUEST).json(e);
@@ -42,10 +44,12 @@ export async function getPostsList(req, res) {
 
     const posts = promise[1].reduce((arr, post) => {
       const favorite = promise[0]._favorites.isPostFavorited(post._id);
+      const share = promise[0]._shared.isPostShared(post._id);
 
       arr.push({
         ...post.toJSON(),
         favorite,
+        share,
       });
 
       return arr;
@@ -95,6 +99,21 @@ export async function favoritePost(req, res) {
     const user = await User.findById(req.user._id);
     await user._favorites.posts(req.params.id);
     return res.sendStatus(HTTPStatus.OK);
+  } catch (e) {
+    return res.status(HTTPStatus.BAD_REQUEST).json(e);
+  }
+}
+
+export async function sharePost(req, res) {
+  try {
+    const post = await Post.findById(req.params.id).populate('user');
+
+    const user = await User.findById(req.user._id);
+    await user._shared.posts(req.params.id);
+
+    return res.status(HTTPStatus.OK).json({
+      ...post.toJSON(),
+    });
   } catch (e) {
     return res.status(HTTPStatus.BAD_REQUEST).json(e);
   }

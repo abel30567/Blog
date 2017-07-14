@@ -14,9 +14,9 @@ const localStrategy = new LocalStrategy(localOpts, async (email, password, done)
   try {
     const user = await User.findOne({ email });
 
-    console.log(email, password);
-    console.log('-------------------');
-    console.log(user);
+    // console.log(email, password);
+    // console.log('-------------------');
+    // console.log(user);
 
     // we are seeing if an email has been stored in DB to authorize access
     if (!user) {

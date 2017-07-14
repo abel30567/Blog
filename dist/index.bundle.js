@@ -283,12 +283,21 @@ UserSchema.methods = {
       return _asyncToGenerator(function* () {
         if (_this2.shared.posts.indexOf(postId) >= 0) {
           _this2.shared.posts.remove(postId);
-          // decrease count function
+          yield _post2.default.decShareCount(postId);
         } else {
           _this2.shared.posts.push(postId);
-          // increase count function
+          yield _post2.default.incShareCount(postId);
         }
+
+        return _this2.save();
       })();
+    },
+
+    isPostShared(postId) {
+      if (this.shared.posts.indexOf(postId) >= 0) {
+        return true;
+      }
+      return false;
     }
   }
 };
@@ -370,6 +379,10 @@ const PostSchema = new _mongoose.Schema({
   favoriteCount: {
     type: Number,
     default: 0
+  },
+  shareCount: {
+    type: Number,
+    default: 0
   }
 }, { timestamps: true });
 
@@ -395,7 +408,8 @@ PostSchema.methods = {
       createdAt: this.createdAt,
       slug: this.slug,
       user: this.user,
-      favoriteCount: this.favoriteCount
+      favoriteCount: this.favoriteCount,
+      shareCount: this.shareCount
     };
   }
 };
@@ -416,6 +430,12 @@ PostSchema.statics = {
 
   decFavoriteCount(postId) {
     return this.findByIdAndUpdate(postId, { $inc: { favoriteCount: -1 } });
+  },
+  incShareCount(postId) {
+    return this.findByIdAndUpdate(postId, { $inc: { shareCount: 1 } });
+  },
+  decShareCount(postId) {
+    return this.findByIdAndUpdate(postId, { $inc: { shareCount: -1 } });
   }
 };
 
@@ -503,9 +523,9 @@ const localStrategy = new _passportLocal2.default(localOpts, (() => {
     try {
       const user = yield _user2.default.findOne({ email });
 
-      console.log(email, password);
-      console.log('-------------------');
-      console.log(user);
+      // console.log(email, password);
+      // console.log('-------------------');
+      // console.log(user);
 
       // we are seeing if an email has been stored in DB to authorize access
       if (!user) {
@@ -917,6 +937,9 @@ routes.delete('/:id', _auth.authJwt, postController.deletePost);
 // Favorites
 routes.post('/:id/favorite', _auth.authJwt, postController.favoritePost);
 
+// Shared
+routes.post('/:id/share', _auth.authJwt, postController.sharePost);
+
 exports.default = routes;
 
 /***/ }),
@@ -929,7 +952,7 @@ exports.default = routes;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.favoritePost = exports.deletePost = exports.updatePost = exports.getPostsList = exports.getPostById = exports.createPost = undefined;
+exports.sharePost = exports.favoritePost = exports.deletePost = exports.updatePost = exports.getPostsList = exports.getPostById = exports.createPost = undefined;
 
 let createPost = exports.createPost = (() => {
   var _ref = _asyncToGenerator(function* (req, res) {
@@ -952,10 +975,12 @@ let getPostById = exports.getPostById = (() => {
       const promise = yield Promise.all([_user2.default.findById(req.user._id), _post2.default.findById(req.params.id).populate('user')]);
 
       const favorite = promise[0]._favorites.isPostFavorited(req.params.id);
+      const share = promise[0]._shared.isPostShared(req.params.id);
       const post = promise[1];
 
       return res.status(_httpStatus2.default.OK).json(Object.assign({}, post.toJSON(), {
-        favorite
+        favorite,
+        share
       }));
     } catch (e) {
       return res.status(_httpStatus2.default.BAD_REQUEST).json(e);
@@ -976,9 +1001,11 @@ let getPostsList = exports.getPostsList = (() => {
 
       const posts = promise[1].reduce(function (arr, post) {
         const favorite = promise[0]._favorites.isPostFavorited(post._id);
+        const share = promise[0]._shared.isPostShared(post._id);
 
         arr.push(Object.assign({}, post.toJSON(), {
-          favorite
+          favorite,
+          share
         }));
 
         return arr;
@@ -1056,6 +1083,25 @@ let favoritePost = exports.favoritePost = (() => {
   };
 })();
 
+let sharePost = exports.sharePost = (() => {
+  var _ref7 = _asyncToGenerator(function* (req, res) {
+    try {
+      const post = yield _post2.default.findById(req.params.id).populate('user');
+
+      const user = yield _user2.default.findById(req.user._id);
+      yield user._shared.posts(req.params.id);
+
+      return res.status(_httpStatus2.default.OK).json(Object.assign({}, post.toJSON()));
+    } catch (e) {
+      return res.status(_httpStatus2.default.BAD_REQUEST).json(e);
+    }
+  });
+
+  return function sharePost(_x13, _x14) {
+    return _ref7.apply(this, arguments);
+  };
+})();
+
 var _httpStatus = __webpack_require__(6);
 
 var _httpStatus2 = _interopRequireDefault(_httpStatus);
@@ -1093,13 +1139,13 @@ exports.default = {
   createPost: {
     body: {
       title: _joi2.default.string().min(3).required(),
-      body: _joi2.default.string().min(20).required()
+      text: _joi2.default.string().min(20).required()
     }
   },
   updatePost: {
     body: {
       title: _joi2.default.string().min(3),
-      body: _joi2.default.string().min(20) // no required because user might want to fix one and not the other.
+      text: _joi2.default.string().min(20) // no required because user might want to fix one and not the other.
     }
   }
 };
