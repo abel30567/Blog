@@ -1,14 +1,14 @@
 const devConfig = {
-  MONGO_URL: 'mongodb://localhost/nodejsrestapi-dev',
+  MONGO_URL: 'mongodb://localhost/RESTfulBlog-dev',
   JWT_SECRET: 'imarkettech',
 };
 
 const testConfig = {
-  MONGO_URL: 'mongodb://localhost/nodejsrestapi-test',
+  MONGO_URL: 'mongodb://localhost/RESTfulBlog-test',
 };
 
 const prodConfig = {
-  MONGO_URL: 'mongodb://localhost/nodejsrestapi-prod',
+  MONGO_URL: 'mongodb://localhost/RESTfulBlog-prod',
 };
 
 const defaultConfig = {
