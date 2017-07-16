@@ -75,16 +75,16 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 const devConfig = {
-  MONGO_URL: 'mongodb://localhost/nodejsrestapi-dev',
+  MONGO_URL: 'mongodb://localhost/RESTfulBlog-dev',
   JWT_SECRET: 'imarkettech'
 };
 
 const testConfig = {
-  MONGO_URL: 'mongodb://localhost/nodejsrestapi-test'
+  MONGO_URL: 'mongodb://localhost/RESTfulBlog-test'
 };
 
 const prodConfig = {
-  MONGO_URL: 'mongodb://localhost/nodejsrestapi-prod'
+  MONGO_URL: 'mongodb://localhost/RESTfulBlog-prod'
 };
 
 const defaultConfig = {
@@ -174,12 +174,12 @@ const UserSchema = new _mongoose.Schema({
   },
   firstName: {
     type: String,
-    required: [true, 'FirstName is required!'],
+    required: [true, 'First Name is required!'],
     trim: true
   },
   lastName: {
     type: String,
-    required: [true, 'LastName is required!'],
+    required: [true, 'Last Name is required!'],
     trim: true
   },
   userName: {
@@ -616,7 +616,7 @@ const app = (0, _express2.default)(); /* eslint-disable no-console */
 // Routes
 
 app.get('/', (req, res) => {
-  res.send('Hello  World');
+  res.render('../public/views/index');
 });
 
 // Setting up the API
@@ -713,6 +713,7 @@ exports.default = app => {
   }
   app.use(_bodyParser2.default.json());
   app.use(_bodyParser2.default.urlencoded({ extended: true }));
+  app.set('view engine', 'ejs');
   if (isDev) {
     app.use((0, _morgan2.default)('dev'));
   }
@@ -827,7 +828,7 @@ let signUp = exports.signUp = (() => {
   var _ref = _asyncToGenerator(function* (req, res) {
     try {
       const user = yield _user2.default.create(req.body);
-      return res.status(_httpStatus2.default.CREATED).json(user.toAuthJSON());
+      return res.status(_httpStatus2.default.CREATED).console.log(user.toAuthJSON());
     } catch (e) {
       return res.status(_httpStatus2.default.BAD_REQUEST).json(e);
     }

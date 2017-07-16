@@ -16,7 +16,7 @@ middlewaresConfig(app);
 // Routes
 
 app.get('/', (req, res) => {
-  res.send('Hello  World');
+  res.render('../public/views/index');
 });
 
 // Setting up the API

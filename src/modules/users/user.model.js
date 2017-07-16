@@ -24,12 +24,12 @@ const UserSchema = new Schema(
     },
     firstName: {
       type: String,
-      required: [true, 'FirstName is required!'],
+      required: [true, 'First Name is required!'],
       trim: true,
     },
     lastName: {
       type: String,
-      required: [true, 'LastName is required!'],
+      required: [true, 'Last Name is required!'],
       trim: true,
     },
     userName: {
